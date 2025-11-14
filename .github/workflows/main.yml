@@ -30,28 +30,15 @@ jobs:
           # Restart the Remote Desktop service to ensure changes take effect
           Restart-Service -Name TermService -Force
 
-      - name: Create RDP User with Secure Password
+      - name: Create RDP User with Fixed Password
         run: |
           Add-Type -AssemblyName System.Security
 
-          $charSet = @{
-              Upper   = [char[]](65..90)      # A-Z
-              Lower   = [char[]](97..122)     # a-z
-              Number  = [char[]](48..57)      # 0-9
-              Special = ([char[]](33..47) + [char[]](58..64) +
-                         [char[]](91..96) + [char[]](123..126)) # Special characters
-          }
-
-          $rawPassword = @()
-          $rawPassword += $charSet.Upper | Get-Random -Count 4
-          $rawPassword += $charSet.Lower | Get-Random -Count 4
-          $rawPassword += $charSet.Number | Get-Random -Count 4
-          $rawPassword += $charSet.Special | Get-Random -Count 4
-
-          $password = -join ($rawPassword | Sort-Object { Get-Random })
+          # Set the fixed password 'Zain.rty123'
+          $password = "Zain.rty123"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
 
-          # Create the RDP user
+          # Create the RDP user with the fixed password
           New-LocalUser -Name "Administrator" -Password $securePass -AccountNeverExpires
 
           # Add the user to Administrator and Remote Desktop Users groups
@@ -77,8 +64,8 @@ jobs:
 
       - name: Establish Tailscale Connection
         run: |
-          # Get the Tailscale Auth Key from GitHub Secrets
-          $authKey = "${{ secrets.TAILSCALE_AUTH_KEY }}"
+          # Hardcoded Tailscale Auth Key
+          $authKey = "tskey-auth-kfnUjLEccw11CNTRL-x91QgPf9mHArcf6cqaKsHAHW2RnA9dzg"
           
           # Log in to Tailscale using the provided auth key and set a unique hostname
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname=gh-runner-$env:GITHUB_RUN_ID
@@ -111,6 +98,42 @@ jobs:
               exit 1
           }
           Write-Host "TCP connectivity successful!"
+
+      - name: Install VS Code
+        run: |
+          $vsCodeUrl = "https://aka.ms/win32-x64-user-stable"
+          $vsCodeInstallerPath = "$env:TEMP\VSCodeSetup.exe"
+          
+          Invoke-WebRequest -Uri $vsCodeUrl -OutFile $vsCodeInstallerPath
+          Start-Process $vsCodeInstallerPath -ArgumentList "/silent" -Wait
+          Remove-Item $vsCodeInstallerPath -Force
+
+      - name: Install Python Latest Stable Version
+        run: |
+          $pythonUrl = "https://www.python.org/ftp/python/3.10.6/python-3.10.6-amd64.exe"
+          $pythonInstallerPath = "$env:TEMP\python-installer.exe"
+          
+          Invoke-WebRequest -Uri $pythonUrl -OutFile $pythonInstallerPath
+          Start-Process $pythonInstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
+          Remove-Item $pythonInstallerPath -Force
+
+      - name: Install PIA VPN
+        run: |
+          $piaUrl = "https://installers.privateinternetaccess.com/windows/PIASetup.exe"
+          $piaInstallerPath = "$env:TEMP\PIASetup.exe"
+          
+          Invoke-WebRequest -Uri $piaUrl -OutFile $piaInstallerPath
+          Start-Process $piaInstallerPath -ArgumentList "/quiet" -Wait
+          Remove-Item $piaInstallerPath -Force
+
+      - name: Install WinRAR
+        run: |
+          $winRarUrl = "https://www.rarlab.com/rar/winrar-x64-611.exe"
+          $winRarInstallerPath = "$env:TEMP\winrar-installer.exe"
+          
+          Invoke-WebRequest -Uri $winRarUrl -OutFile $winRarInstallerPath
+          Start-Process $winRarInstallerPath -ArgumentList "/silent" -Wait
+          Remove-Item $winRarInstallerPath -Force
 
       - name: Maintain RDP Connection
         run: |
