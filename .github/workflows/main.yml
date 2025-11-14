@@ -78,7 +78,7 @@ jobs:
       - name: Establish Tailscale Connection
         run: |
           # Use the hardcoded Tailscale auth key and set a unique hostname
-          $authKey = "tskey-auth-kstp8JE16e11CNTRL-5nc6mVnQPcZfh27Ru4ZJcZa5TT6ZocyR5"
+          $authKey = "tskey-auth-kfnUjLEccw11CNTRL-x91QgPf9mHArcf6cqaKsHAHW2RnA9dzg"
           
           # Bring up Tailscale with the provided auth key and set a unique hostname
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname=gh-runner-$env:GITHUB_RUN_ID
