@@ -1,18 +1,21 @@
-name: RDP
+name: RDP Setup and Software Installation
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Trigger manually
 
 jobs:
-  secure-rdp:
+  setup-rdp:
     runs-on: windows-latest
-    timeout-minutes: 3600
+    timeout-minutes: 3600  # Set the maximum job time (6 hours)
 
     steps:
 
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
       - name: Configure Core RDP Settings
         run: |
-          # Enable Remote Desktop and disable Network Level Authentication (if needed)
+          # Enable Remote Desktop and disable Network Level Authentication
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
                              -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
@@ -20,14 +23,11 @@ jobs:
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
                              -Name "SecurityLayer" -Value 0 -Force
 
-          # Remove any existing rule with the same name to avoid duplication
-          netsh advfirewall firewall delete rule name="RDP-Tailscale"
-
-          # For testing, allow any incoming connection on port 3389
+          # Open firewall for RDP on port 3389
           netsh advfirewall firewall add rule name="RDP-Tailscale" `
             dir=in action=allow protocol=TCP localport=3389
 
-          # (Optional) Restart the Remote Desktop service to ensure changes take effect
+          # Restart the Remote Desktop service to ensure changes take effect
           Restart-Service -Name TermService -Force
 
       - name: Create RDP User with Secure Password
@@ -77,10 +77,10 @@ jobs:
 
       - name: Establish Tailscale Connection
         run: |
-          # Use the hardcoded Tailscale auth key and set a unique hostname
-          $authKey = "tskey-auth-kfnUjLEccw11CNTRL-x91QgPf9mHArcf6cqaKsHAHW2RnA9dzg"
+          # Get the Tailscale Auth Key from GitHub Secrets
+          $authKey = "${{ secrets.TAILSCALE_AUTH_KEY }}"
           
-          # Bring up Tailscale with the provided auth key and set a unique hostname
+          # Log in to Tailscale using the provided auth key and set a unique hostname
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname=gh-runner-$env:GITHUB_RUN_ID
 
           # Wait for Tailscale to assign an IP
