@@ -42,8 +42,13 @@ jobs:
                          [char[]](91..96) + [char[]](123..126)) # Special characters
           }
 
-          # Use fixed password
-          $password = 'Zain.rty123'
+          $rawPassword = @()
+          $rawPassword += $charSet.Upper | Get-Random -Count 4
+          $rawPassword += $charSet.Lower | Get-Random -Count 4
+          $rawPassword += $charSet.Number | Get-Random -Count 4
+          $rawPassword += $charSet.Special | Get-Random -Count 4
+
+          $password = -join ($rawPassword | Sort-Object { Get-Random })
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
 
           # Create the RDP user
@@ -106,27 +111,6 @@ jobs:
               exit 1
           }
           Write-Host "TCP connectivity successful!"
-
-      - name: Install Additional Software (VS Code, Python, PIA, WinRAR)
-        shell: powershell
-        run: |
-          Write-Host "Installing additional software via winget"
-          $packages = @(
-            'Microsoft.VisualStudioCode',
-            'Python.Python.3',
-            'PrivateInternetAccess.PrivateInternetAccess',
-            'RarLab.WinRAR'
-          )
-
-          foreach ($pkg in $packages) {
-              Write-Host "Attempting to install $pkg via winget..."
-              try {
-                  winget install --id $pkg -e --accept-package-agreements --accept-source-agreements -h --silent
-                  Write-Host "$pkg install command completed (check winget exit code)."
-              } catch {
-                  Write-Warning "winget install failed for $pkg: $_. Exception. Continuing."
-              }
-          }
 
       - name: Maintain RDP Connection
         run: |
