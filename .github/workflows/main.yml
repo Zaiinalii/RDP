@@ -11,7 +11,7 @@ jobs:
     steps:
 
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Configure Core RDP Settings
         run: |
@@ -105,52 +105,6 @@ jobs:
               exit 1
           }
           Write-Host "TCP connectivity successful!"
-
-      - name: Install Python (for tools/scripts)
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'    # choose stable version you want
-          cache: 'pip'
-
-      - name: Install VS Code (winget)
-        shell: powershell
-        run: |
-          Write-Host "Installing Visual Studio Code via winget..."
-          # winget may require elevated permissions; this runner should allow it
-          winget --accept-package-agreements --accept-source-agreements install --id Microsoft.VisualStudioCode -e --silent || Write-Host "winget install failed or not available"
-
-      - name: Install Private Internet Access (PIA) - winget or fallback download
-        shell: powershell
-        env:
-          PIA_INSTALL_URL: ${{ secrets.PIA_INSTALL_URL }} # optional: direct installer URL stored in secrets
-        run: |
-          Write-Host "Attempting PIA install via winget..."
-          $installed = $false
-          try {
-            winget --accept-package-agreements --accept-source-agreements install --id PrivateInternetAccess.PrivateInternetAccess -e --silent
-            $installed = $LASTEXITCODE -eq 0
-          } catch { Write-Host "winget PIA attempt failed: $_" }
-          if (-not $installed) {
-            if ($env:PIA_INSTALL_URL) {
-              Write-Host "Downloading PIA installer from secret URL..."
-              $out = "$env:TEMP\pia_installer.exe"
-              Invoke-WebRequest -Uri $env:PIA_INSTALL_URL -OutFile $out
-              Write-Host "Running PIA installer silently..."
-              Start-Process -FilePath $out -ArgumentList "/S" -Wait -NoNewWindow
-              Remove-Item $out -Force
-            } else {
-              Write-Host "No PIA installer URL provided and winget failed. Set secrets.PIA_INSTALL_URL with the official installer URL or adjust package id."
-              exit 0
-            }
-          }
-
-      - name: Verify installs
-        shell: powershell
-        run: |
-          Write-Host "Python version:"; python --version
-          Write-Host "Code version:"; & 'C:\Program Files\Microsoft VS Code\Code.exe' --version 2>$null || Write-Host "VS Code not found in default location"
-          Write-Host "PIA client check (if installed):"
-          Get-Command pia* -ErrorAction SilentlyContinue | Select-Object -First 5
 
       - name: Maintain RDP Connection
         run: |
