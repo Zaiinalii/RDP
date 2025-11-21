@@ -25,12 +25,13 @@ jobs:
 
           # Restart RDP service
           Restart-Service -Name TermService -Force
+
       - name: Create RDP User with Fixed Password
         run: |
           $password = "zxcvbnm"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
 
-          # Remove existing user if it exists to avoid errors
+          # Remove existing user if it exists
           if (Get-LocalUser -Name "RDP" -ErrorAction SilentlyContinue) {
             Remove-LocalUser -Name "RDP"
           }
@@ -41,7 +42,6 @@ jobs:
 
           echo "RDP_PASSWORD=$password" >> $env:GITHUB_ENV
 
-          
       - name: Install Tailscale
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
